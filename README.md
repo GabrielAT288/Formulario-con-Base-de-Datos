@@ -66,13 +66,6 @@ https://formulario-con-base-de-datos.onrender.com/
 Instrucciones para Ejecución Local
 Para configurar y ejecutar este proyecto en su entorno de desarrollo local, siga estos pasos:
 
-Clonar el Repositorio: ⬇️
-Abra su terminal o línea de comandos y ejecute los siguientes comandos:
-
-git clone https://github.com/TuUsuario/TuNombreDeRepositorio.git
-cd TuNombreDeRepositorio
-
-(Asegúrese de reemplazar TuUsuario/TuNombreDeRepositorio.git y TuNombreDeRepositorio con la información real de su repositorio en GitHub.)
 
 Instalar Dependencias: 📦
 Verifique que tiene Node.js y npm instalados en su sistema. Luego, desde la raíz del proyecto, instale las dependencias necesarias:
