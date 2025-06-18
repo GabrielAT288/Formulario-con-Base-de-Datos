@@ -8,10 +8,11 @@ const app = express(); // Crea una instancia de la aplicación Express
 const PORT = process.env.PORT || 3000; // Define el puerto del servidor, usando el puerto de entorno o 3000 por defecto
 
 // Conecta a la base de datos SQLite. Si el archivo no existe, lo creará.
+// Advertencia: En servicios de despliegue como Render.com (plan gratuito), este archivo puede ser efímero.
 const db = new sqlite3.Database('./database.sqlite', (err) => {
     if (err) {
         // Si hay un error al conectar, imprímelo en la consola
-        console.error('Error al conectar a la base de datos:', err.message);
+        console.error('Error al conectar a la base de datos SQLite:', err.message);
     } else {
         // Si la conexión es exitosa, imprime un mensaje de confirmación
         console.log('Conectado a la base de datos SQLite.');
@@ -39,6 +40,12 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
 // Middleware para servir archivos estáticos desde el directorio 'public'
 // Esto permite que el navegador acceda a index.html, CSS, JS del frontend
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- NUEVA RUTA PARA SERVIR INDEX.HTML EN LA RAÍZ ---
+// Esta ruta asegura que index.html se sirva cuando se accede a la URL base.
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Middleware para parsear el cuerpo de las solicitudes como JSON
 // Esto es necesario para leer los datos enviados desde el formulario del frontend
