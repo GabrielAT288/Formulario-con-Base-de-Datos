@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario con Base de Datos Animado (Paneles Transparentes y Flotantes)</title>
+    <!-- Incluye Tailwind CSS CDN para estilos rápidos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos para la visibilidad de contraseña (Font Awesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Use the Inter font */
+            /* Animated gradient background with more colors and smooth transitions */
+            /* Define a longer gradient that will repeat and move */
+            background: linear-gradient(135deg, #8A2BE2, #4169E1, #00FFFF, #32CD32, #FFD700, #FFA500, #FF69B4, #8A2BE2); /* Purple, Blue, Aqua, LimeGreen, Gold, Orange, Hot Pink, back to Purple */
+            background-size: 400% 400%; /* Make the background much larger than the viewport */
+            animation: gradientBackground 30s ease infinite; /* Slower, smoother gradient animation for more colors */
+            overflow: hidden; /* Prevent scrollbars if particles overflow */
+            position: relative; /* Necessary for positioning particles */
+        }
+
+        /* Animation for the gradient background */
+        @keyframes gradientBackground {
+            /* Only animate background-position for a smooth, diffused transition */
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Styles for error messages */
+        .error-message {
+            color: #ef4444; /* Tailwind's bright red */
+            font-size: 0.875rem; /* Small text size */
+            margin-top: 0.25rem;
+            opacity: 0; /* Hidden by default */
+            max-height: 0; /* No height by default */
+            overflow: hidden;
+            transition: opacity 0.3s ease-out, max-height 0.3s ease-out; /* Smooth transition */
+        }
+        .error-message.show {
+            opacity: 1; /* Show message */
+            max-height: 2rem; /* Height to show message */
+        }
+
+        /* Animation for input fields on focus */
+        input:focus {
+            outline: none; /* Remove default browser outline */
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Blue focus shadow (Tailwind's blue-500 equivalent) */
+            transform: translateY(-2px); /* Slight upward movement */
+        }
+
+        /* Transitions for input fields */
+        input {
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        /* Animation for server message */
+        #serverMessage {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        #serverMessage.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Animation for buttons (Registrar and Eliminar) */
+        button {
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        button:hover {
+            transform: translateY(-3px); /* Slight lift on hover */
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+        }
+        button:active {
+            transform: translateY(0); /* Return to original position on click */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* More subtle shadow on press */
+        }
+
+        /* Animation for table rows when added */
+        .table-row-enter {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        .table-row-enter-active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        
+        /* Animation to indicate success/error in input field */
+        .input-success {
+            border-color: #34d399; /* green-400 */
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.5);
+        }
+
+        .input-error {
+            border-color: #ef4444; /* red-500 */
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Styles for particles container */
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1; /* Ensure it's behind the main content */
+        }
+
+        /* Ensure content is above particles */
+        /* Changed to flex-row and flex-wrap for side-by-side layout */
+        .content-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column; /* Default for mobile */
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* To vertically center content */
+            padding: 10px; /* A bit of padding */
+            gap: 20px; /* Space between panels */
+        }
+
+        /* For larger screens, arrange panels in a row */
+        @media (min-width: 1024px) { /* Tailwind's lg breakpoint */
+            .content-container {
+                flex-direction: row;
+                align-items: flex-start; /* Align items to the top */
+            }
+        }
+
+        /* New styles for transparent, floating panels */
+        .floating-panel {
+            background-color: rgba(255, 255, 255, 0.2); /* Slightly transparent white */
+            backdrop-filter: blur(10px); /* Frosted glass effect */
+            -webkit-backdrop-filter: blur(10px); /* For Safari compatibility */
+            border: 1px solid rgba(255, 255, 255, 0.18); /* Subtle border for definition */
+            animation: float 6s ease-in-out infinite; /* Apply float animation */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* Enhanced shadow for depth */
+        }
+
+        /* Keyframes for the floating animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Styles for the custom success popup */
+        #registrationSuccessPopup {
+            position: fixed;
+            inset: 0; /* Cover the whole viewport */
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black overlay */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50; /* Ensure it's on top of everything */
+            opacity: 0; /* Hidden by default for transition */
+            transition: opacity 0.3s ease-out;
+            pointer-events: none; /* Crucial: Do not block clicks when hidden/fading */
+        }
+        #registrationSuccessPopup.show {
+            opacity: 1; /* Show with transition */
+            pointer-events: auto; /* Allow clicks when visible */
+        }
+        /* Specific animation for the checkmark icon inside the popup */
+        @keyframes bounceIn {
+            0%, 20%, 40%, 60%, 80%, 100% {
+                transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+            }
+            0% {
+                opacity: 0;
+                transform: scale3d(.3, .3, .3);
+            }
+            20% {
+                transform: scale3d(1.1, 1.1, 1.1);
+            }
+            40% {
+                transform: scale3d(.9, .9, .9);
+            }
+            60% {
+                opacity: 1;
+                transform: scale3d(1.03, 1.03, 1.03);
+            }
+            80% {
+                transform: scale3d(.97, .97, .97);
+            }
+            100% {
+                opacity: 1;
+                transform: scale3d(1, 1, 1);
+            }
+        }
+        .animate-bounce-in {
+            animation: bounceIn 0.7s;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Container for particles -->
+    <div id="particles-js"></div>
+
+    <!-- Main content container to ensure it's above particles -->
+    <div class="content-container">
+        <!-- Form panel with transparency and floating effect -->
+        <div class="p-8 rounded-xl shadow-lg w-full max-w-lg lg:w-2/5 xl:w-1/3 mb-8 lg:mb-0 animate-fade-in-down floating-panel">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Registro de Usuario</h1>
+            
+            <form id="registrationForm" class="space-y-5">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="name" name="name" placeholder="Tu nombre" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" required>
+                    <span id="nameError" class="error-message"></span>
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" placeholder="ejemplo@dominio.com" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" required>
+                    <span id="emailError" class="error-message"></span>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" placeholder="Mín. 8 caracteres, 1 número, 1 mayúscula" 
+                               class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" required>
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-eye"></i> <!-- Eye icon to show/hide password -->
+                        </button>
+                    </div>
+                    <span id="passwordError" class="error-message"></span>
+                </div>
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirmar Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repite tu contraseña" 
+                               class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" required>
+                        <button type="button" id="toggleConfirmPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <span id="confirmPasswordError" class="error-message"></span>
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Registrar
+                </button>
+            </form>
+
+            <!-- Server confirmation or error message (for other errors, not registration success) -->
+            <div id="serverMessage" class="mt-4 p-3 rounded-lg text-center hidden"></div>
+        </div>
+
+        <!-- Button to toggle table visibility -->
+        <button id="toggleTableBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 my-4">
+            Ver tabla de registro
+        </button>
+
+        <!-- Table panel, initially hidden with 'hidden' class -->
+        <div id="usersTablePanel" class="p-8 rounded-xl shadow-lg w-full max-w-3xl lg:w-3/5 xl:w-2/3 floating-panel hidden">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Usuarios Registrados</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white/50 border border-gray-200 rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-100/50 border-b border-gray-200">
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tl-lg">ID</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider rounded-tr-lg">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- User data will be loaded here -->
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-gray-500">Cargando usuarios...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom success message modal/popup -->
+    <div id="registrationSuccessPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center flex flex-col items-center justify-center min-w-[250px]">
+            <i class="fas fa-check-circle text-green-500 text-5xl mb-4 animate-bounce-in"></i>
+            <p class="text-lg font-semibold text-gray-800" id="registrationSuccessText"></p>
+        </div>
+    </div>
+
+    <!-- particles.js script -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // particles.js configuration
+        particlesJS('particles-js', {
+            "particles": {
+                "number": {
+                    "value": 80,
+                    "density": {
+                        "enable": true,
+                        "value_area": 800
+                    }
+                },
+                "color": {
+                    "value": "#ffffff" // Particle color (white)
+                },
+                "shape": {
+                    "type": "circle",
+                    "stroke": {
+                        "width": 0,
+                        "color": "#000000"
+                    },
+                    "polygon": {
+                        "nb_sides": 5
+                    },
+                    "image": {
+                        "src": "img/github.svg",
+                        "width": 100,
+                        "height": 100
+                    }
+                },
+                "opacity": {
+                    "value": 0.5,
+                    "random": false,
+                    "anim": {
+                        "enable": false,
+                        "speed": 1,
+                        "opacity_min": 0.1,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": {
+                        "enable": false,
+                        "speed": 40,
+                        "size_min": 0.1,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#ffffff", // Line color
+                    "opacity": 0.4,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 6,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false,
+                    "attract": {
+                        "enable": false,
+                        "rotateX": 600,
+                        "rotateY": 1200
+                    }
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": {
+                        "enable": true,
+                        "mode": "grab" // Particles "grab" on hover
+                    },
+                    "onclick": {
+                        "enable": true,
+                        "mode": "push" // Particles "push" on click
+                    },
+                    "resize": true
+                },
+                "modes": {
+                    "grab": {
+                        "distance": 140,
+                        "line_linked": {
+                            "opacity": 1
+                        }
+                    },
+                    "bubble": {
+                        "distance": 400,
+                        "size": 40,
+                        "duration": 2,
+                        "opacity": 8,
+                        "speed": 3
+                    },
+                    "repulse": {
+                        "distance": 200,
+                        "duration": 0.4
+                    },
+                    "push": {
+                        "particles_nb": 4
+                    },
+                    "remove": {
+                        "particles_nb": 2
+                    }
+                }
+            },
+            "retina_detect": true
+        });
+
+
+        // Get DOM element references
+        const registrationForm = document.getElementById('registrationForm');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const togglePassword = document.getElementById('togglePassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        
+        // New DOM references for table visibility and custom popup
+        const toggleTableBtn = document.getElementById('toggleTableBtn');
+        const usersTablePanel = document.getElementById('usersTablePanel');
+        const registrationSuccessPopup = document.getElementById('registrationSuccessPopup');
+        const registrationSuccessText = document.getElementById('registrationSuccessText');
+
+        const usersTableBody = document.getElementById('usersTableBody');
+        const serverMessage = document.getElementById('serverMessage');
+
+        // References to elements where error messages will be displayed
+        const nameError = document.getElementById('nameError');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const confirmPasswordError = document.getElementById('confirmPasswordError');
+
+        // --- Real-time Validation Functions with animations ---
+
+        // Generic function to show/hide error message with animation
+        function displayError(element, message, inputElement = null) {
+            element.textContent = message;
+            if (message) {
+                element.classList.add('show');
+                if (inputElement) {
+                    inputElement.classList.remove('input-success');
+                    inputElement.classList.add('input-error');
+                }
+            } else {
+                element.classList.remove('show');
+                if (inputElement) {
+                    inputElement.classList.remove('input-error');
+                    // Only add input-success if the field has content and is valid
+                    if (inputElement.value.trim() !== '') {
+                         inputElement.classList.add('input-success');
+                    } else {
+                        inputElement.classList.remove('input-success'); // If emptied, remove success
+                    }
+                }
+            }
+        }
+
+        // Validate name field
+        function validateName() {
+            const isValid = nameInput.value.trim() !== '';
+            displayError(nameError, isValid ? '' : 'El nombre es obligatorio.', nameInput);
+            return isValid;
+        }
+
+        // Validate email format
+        function validateEmail() {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const value = emailInput.value.trim();
+            let isValid = true;
+            let errorMessage = '';
+
+            if (value === '') {
+                errorMessage = 'El correo electrónico es obligatorio.';
+                isValid = false;
+            } else if (!emailRegex.test(value)) {
+                errorMessage = 'El formato del correo electrónico no es válido.';
+                isValid = false;
+            }
+            displayError(emailError, errorMessage, emailInput);
+            return isValid;
+        }
+
+        // Valida la fortaleza de la contraseña
+        function validatePassword() {
+            const password = passwordInput.value;
+            let isValid = true;
+            let errorMessage = '';
+
+            if (password.length < 8) {
+                errorMessage += 'La contraseña debe tener al menos 8 caracteres. ';
+                isValid = false;
+            }
+            if (!/[0-9]/.test(password)) {
+                errorMessage += 'La contraseña debe contener al menos un número. ';
+                isValid = false;
+            }
+            if (!/[A-Z]/.test(password)) {
+                errorMessage += 'La contraseña debe contener al menos una letra mayúscula. ';
+                isValid = false;
+            }
+
+            displayError(passwordError, errorMessage.trim(), passwordInput);
+            // También se valida la confirmación de la contraseña cuando cambia la contraseña principal
+            validateConfirmPassword(); 
+            return isValid;
+        }
+
+        // Valida que las contraseñas coincidan
+        function validateConfirmPassword() {
+            const isValid = confirmPasswordInput.value.trim() !== '' && passwordInput.value === confirmPasswordInput.value;
+            let errorMessage = '';
+            if (confirmPasswordInput.value.trim() === '') {
+                errorMessage = 'Confirma tu contraseña.';
+            } else if (passwordInput.value !== confirmPasswordInput.value) {
+                errorMessage = 'Las contraseñas no coinciden.';
+            }
+            displayError(confirmPasswordError, errorMessage, confirmPasswordInput);
+            return isValid;
+        }
+
+        // Escucha eventos 'input' para validación en tiempo real
+        nameInput.addEventListener('input', validateName);
+        emailInput.addEventListener('input', validateEmail);
+        passwordInput.addEventListener('input', validatePassword);
+        confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+
+        // --- Funciones de Visibilidad de Contraseña ---
+
+        // Función para alternar la visibilidad de la contraseña
+        function togglePasswordVisibility(inputElement, toggleButton) {
+            const type = inputElement.getAttribute('type') === 'password' ? 'text' : 'password';
+            inputElement.setAttribute('type', type);
+            // Cambia el icono del ojo
+            toggleButton.querySelector('i').classList.toggle('fa-eye');
+            toggleButton.querySelector('i').classList.toggle('fa-eye-slash');
+        }
+
+        // Asigna eventos a los botones de toggle
+        togglePassword.addEventListener('click', () => togglePasswordVisibility(passwordInput, togglePassword));
+        toggleConfirmPassword.addEventListener('click', () => togglePasswordVisibility(confirmPasswordInput, toggleConfirmPassword));
+
+        // --- Interacción con el Backend (Fetch API) ---
+
+        // Function to show server messages with animation (for general errors)
+        function showServerMessage(message, isSuccess = true) {
+            serverMessage.textContent = message;
+            serverMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            if (isSuccess) {
+                serverMessage.classList.add('bg-green-100', 'text-green-700');
+            } else {
+                serverMessage.classList.add('bg-red-100', 'text-red-700');
+            }
+            serverMessage.classList.add('show'); // Add class to animate appearance
+
+            // Hide message after 5 seconds with animation
+            setTimeout(() => {
+                serverMessage.classList.remove('show'); // Remove class to animate disappearance
+                setTimeout(() => {
+                    serverMessage.classList.add('hidden'); // Fully hide after transition
+                }, 500); // Matches CSS transition duration
+            }, 5000);
+        }
+
+        // Function to show custom registration success popup
+        function showRegistrationSuccessPopup(message) {
+            registrationSuccessText.textContent = message;
+            registrationSuccessPopup.classList.remove('hidden');
+            // Ensure the opacity transition can play
+            setTimeout(() => {
+                registrationSuccessPopup.classList.add('show');
+            }, 10); // Small delay to trigger transition
+
+            // Hide the popup after 3 seconds
+            setTimeout(() => {
+                registrationSuccessPopup.classList.remove('show');
+                setTimeout(() => {
+                    registrationSuccessPopup.classList.add('hidden');
+                }, 300); // Matches opacity transition duration
+            }, 3000); // Display for 3 seconds
+        }
+
+
+        // Maneja el envío del formulario de registro
+        registrationForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Previene el envío por defecto del formulario
+
+            // Ejecuta todas las validaciones antes de enviar
+            const isNameValid = validateName();
+            const isEmailValid = validateEmail();
+            const isPasswordValid = validatePassword();
+            const isConfirmPasswordValid = validateConfirmPassword();
+
+            // Si alguna validación falla, no envía el formulario
+            if (!isNameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
+                showServerMessage('Por favor, corrige los errores del formulario.', false);
+                return;
+            }
+
+            // Recopila los datos del formulario
+            const formData = {
+                name: nameInput.value,
+                email: emailInput.value,
+                password: passwordInput.value // La contraseña se hashea en el backend
+            };
+
+            try {
+                const response = await fetch('/registro', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json(); // Parsea la respuesta JSON del servidor
+
+                if (response.ok) { // Si la respuesta es exitosa (código 2xx)
+                    showRegistrationSuccessPopup(data.message); // Usa el popup personalizado para éxito
+                    registrationForm.reset(); // Limpia el formulario
+                    // Limpia los mensajes de error y las clases de validación después de un registro exitoso
+                    displayError(nameError, '', nameInput);
+                    displayError(emailError, '', emailInput);
+                    displayError(passwordError, '', passwordInput);
+                    displayError(confirmPasswordError, '', confirmPasswordInput);
+                    loadUsers(); // Recarga la tabla de usuarios (se actualiza si está visible o cuando se muestre)
+                } else { // Si la respuesta indica un error
+                    showServerMessage(data.error || 'Error en el registro.', false); // Muestra el error general del servidor
+                }
+            } catch (error) {
+                console.error('Error al enviar el formulario:', error);
+                showServerMessage('Error de conexión con el servidor. Inténtalo de nuevo.', false);
+            }
+        });
+
+        // Function to load and display users from the database
+        async function loadUsers() {
+            try {
+                const response = await fetch('/datos'); // Make a GET request to the backend
+                const users = await response.json(); // Parse response as JSON
+
+                usersTableBody.innerHTML = ''; // Clear table before loading new data
+
+                if (users.length === 0) {
+                    // If no users, show a message in the table
+                    usersTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-gray-500">No hay usuarios registrados aún.</td></tr>`;
+                    return;
+                }
+
+                // Iterate over each user and create a table row with animation
+                users.forEach((user, index) => {
+                    const row = document.createElement('tr');
+                    row.classList.add('border-b', 'border-gray-200', 'hover:bg-gray-50', 'table-row-enter');
+                    // Add a small delay to each row for a staggered effect
+                    row.style.animationDelay = `${index * 0.05}s`; 
+                    row.innerHTML = `
+                        <td class="py-3 px-4 text-sm text-gray-700">${user.id}</td>
+                        <td class="py-3 px-4 text-sm text-gray-700">${user.name}</td>
+                        <td class="py-3 px-4 text-sm text-gray-700">${user.email}</td>
+                        <td class="py-3 px-4 text-sm text-gray-700">
+                            <button data-id="${user.id}" class="delete-btn bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-xs font-semibold transition duration-200">
+                                Eliminar
+                            </button>
+                        </td>
+                    `;
+                    usersTableBody.appendChild(row);
+
+                    // Force reflow for animation to apply
+                    void row.offsetWidth; 
+                    row.classList.add('table-row-enter-active');
+                });
+
+                // Add listeners to delete buttons after they have been loaded into the DOM
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        // Confirma con el usuario antes de eliminar
+                        if (confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
+                             deleteUser(e.target.dataset.id); // Llama a la función de eliminación
+                        }
+                       
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error al cargar usuarios:', error);
+                usersTableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Error al cargar usuarios.</td></tr>`;
+            }
+        }
+
+        // Function to delete a user
+        async function deleteUser(id) {
+            try {
+                const response = await fetch(`/eliminar/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showServerMessage(data.message, true); // Show success message
+                    loadUsers(); // Reload user table
+                } else {
+                    showServerMessage(data.error || 'Error al eliminar el usuario.', false); // Show server error
+                }
+            } catch (error) {
+                console.error('Error al eliminar usuario:', error);
+                showServerMessage('Error de conexión al eliminar el usuario.', false);
+            }
+        }
+
+        // No need to load users on DOMContentLoaded if the table is hidden by default.
+        // Data will be loaded when 'Ver tabla' is clicked or after a successful registration.
+        // document.addEventListener('DOMContentLoaded', loadUsers); // Removed this line
+
+        // Toggle table visibility
+        toggleTableBtn.addEventListener('click', () => {
+            if (usersTablePanel.classList.contains('hidden')) {
+                usersTablePanel.classList.remove('hidden');
+                loadUsers(); // Load users when table becomes visible
+                toggleTableBtn.textContent = 'Ocultar tabla de registro';
+            } else {
+                usersTablePanel.classList.add('hidden');
+                toggleTableBtn.textContent = 'Ver tabla de registro';
+            }
+        });
+
+    </script>
+</body>
+</html>
+
